@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>המעבדה של מנדלייב – האטום</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#eaf1fb;
+    --muted:#9fb1cc;
+    --panel:rgba(20,29,52,.55);
+    --border:rgba(130,165,225,.18);
+    --border-2:rgba(130,165,225,.30);
+    --proton:#ff5d6c;
+    --neutron:#cfd8e6;
+    --electron:#5aa8ff;
+    --accent:#2ee6a6;
+    --accent-2:#16b98a;
+    --warn:#ffd27a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:"Segoe UI","Assistant",Arial,sans-serif;
+    color:var(--ink);line-height:1.6;min-height:100vh;padding:22px 18px 40px;
+    background:
+      radial-gradient(900px 600px at 80% -10%, rgba(46,230,166,.10), transparent 60%),
+      radial-gradient(1100px 700px at 10% 110%, rgba(90,168,255,.12), transparent 60%),
+      linear-gradient(160deg,#070b16 0%,#0b1222 45%,#0a1020 100%);
+    background-attachment:fixed;
+  }
+
+  /* ===== כותרת ===== */
+  .topbar{
+    max-width:1220px;margin:0 auto 20px;text-align:center;padding:22px 26px;border-radius:22px;
+    background:linear-gradient(180deg,rgba(36,49,82,.55),rgba(18,26,46,.55));
+    border:1px solid var(--border);backdrop-filter:blur(10px);
+    box-shadow:0 18px 50px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.05);
+    position:relative;overflow:hidden;
+  }
+  .topbar::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;
+    background:linear-gradient(90deg,transparent,rgba(46,230,166,.7),rgba(90,168,255,.7),transparent);}
+  .topbar h1{margin:0;font-family:'Frank Ruhl Libre',serif;font-size:46px;font-weight:900;letter-spacing:1px;line-height:1.15;
+    background:linear-gradient(100deg,#ffd27a 0%,#ffb86b 22%,#9af2d4 50%,#5aa8ff 74%,#b98bff 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 2px 14px rgba(120,180,255,.18));}
+  .topbar .sub{margin-top:7px;font-family:'Frank Ruhl Libre',serif;font-size:19px;color:var(--muted);font-weight:500;letter-spacing:2px;}
+
+  /* ===== פריסה כללית ===== */
+  .layout{max-width:1220px;margin:0 auto;display:flex;flex-direction:column;gap:18px;}
+  .panel{
+    background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:20px;
+    backdrop-filter:blur(12px);box-shadow:0 16px 40px rgba(0,0,0,.40), inset 0 1px 0 rgba(255,255,255,.04);
+  }
+  .panel h2{margin:0 0 14px;font-size:18px;font-weight:800;display:flex;align-items:center;gap:9px;color:#dbe7fa;}
+  .panel h2 .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent);}
+
+  /* ===== משימות (בראש, שלושה כרטיסים) ===== */
+  .tasks-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  @media (max-width:840px){.tasks-row{grid-template-columns:1fr;}}
+  .task{
+    display:flex;gap:11px;align-items:flex-start;padding:13px;border-radius:14px;
+    background:rgba(12,19,36,.5);border:1px solid var(--border);
+    transition:background .35s,border-color .35s,box-shadow .35s;
+  }
+  .task.done{background:rgba(20,52,46,.45);border-color:rgba(46,230,166,.45);box-shadow:0 0 22px rgba(46,230,166,.12);}
+  .task .mark{
+    flex:0 0 auto;width:28px;height:28px;border-radius:50%;border:2px solid var(--border-2);
+    background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:bold;
+    transition:transform .4s cubic-bezier(.2,1.4,.4,1),background .35s,border-color .35s,box-shadow .35s;
+  }
+  .task.done .mark{background:var(--accent-2);border-color:var(--accent);transform:scale(1.12);box-shadow:0 0 16px rgba(46,230,166,.6);}
+  .task .t-title{font-weight:800;margin-bottom:3px;color:#e8f0fb;font-size:14px;}
+  .task .t-text{font-size:13px;color:#aebbd2;}
+  .task .t-prog{margin-top:8px;font-size:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    padding-top:7px;border-top:1px dashed rgba(130,165,225,.2);}
+  .task .t-prog .pdone{color:#2ee6a6;font-weight:700;}
+  .task .t-prog .ptodo{color:#ffd27a;}
+  .task .t-prog .psep{color:#5a6b86;}
+
+  /* ===== אזור עבודה: אטום לצד לוח הנתונים ===== */
+  .work-grid{display:grid;grid-template-columns:1fr 330px;gap:18px;align-items:start;}
+  @media (max-width:800px){.work-grid{grid-template-columns:1fr;}}
+
+  .lab-wrap{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .stage{
+    width:100%;display:flex;justify-content:center;border-radius:18px;padding:6px;
+    background:radial-gradient(circle at 50% 45%, rgba(30,44,78,.45), rgba(8,13,26,.2) 70%);border:1px solid var(--border);
+  }
+  .stage svg{display:block;width:100%;max-width:360px;height:auto;}
+  .status-pill{
+    font-size:18px;font-weight:800;letter-spacing:.5px;color:#dbe7fa;padding:11px 22px;border-radius:999px;
+    background:rgba(12,19,36,.6);border:1px solid var(--border-2);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05), 0 8px 20px rgba(0,0,0,.3);direction:ltr;
+  }
+
+  /* ===== פקדים (מתחת, רוחב מלא) ===== */
+  .controls{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;}
+  .ctl{
+    flex:0 1 210px;display:flex;flex-direction:column;align-items:center;gap:10px;
+    padding:16px 14px;border-radius:18px;background:rgba(12,19,36,.55);border:1px solid var(--border);
+  }
+  .orb{width:54px;height:54px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px;color:#fff;}
+  .orb.p{background:radial-gradient(circle at 35% 30%,#ff9aa3,#ff5d6c 55%,#c92f43);box-shadow:0 0 22px rgba(255,93,108,.55);}
+  .orb.n{background:radial-gradient(circle at 35% 30%,#ffffff,#cfd8e6 55%,#9aa6b6);box-shadow:0 0 20px rgba(207,216,230,.4);color:#2a3344;}
+  .orb.e{width:46px;height:46px;font-size:19px;background:radial-gradient(circle at 35% 30%,#bfe0ff,#5aa8ff 55%,#2c6fd6);box-shadow:0 0 22px rgba(90,168,255,.6);}
+  .ctl .name{font-weight:800;font-size:16px;}
+  /* מונה קלאסי: [−] [מספר] [+] בכיוון LTR קבוע */
+  .stepper{direction:ltr;display:flex;align-items:center;gap:12px;}
+  .stepper .num{min-width:44px;text-align:center;font-size:24px;font-weight:800;color:#eef4ff;}
+  .btn-pm{
+    width:44px;height:44px;border-radius:12px;border:1px solid var(--border-2);background:rgba(255,255,255,.05);
+    color:#eaf1fb;font-size:25px;font-weight:bold;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;
+    transition:background .15s,transform .1s,box-shadow .2s;
+  }
+  .btn-pm:hover:not(:disabled){background:rgba(90,168,255,.18);box-shadow:0 0 14px rgba(90,168,255,.25);}
+  .btn-pm:active:not(:disabled){transform:scale(.92);}
+  .btn-pm:disabled{opacity:.32;cursor:not-allowed;}
+  .limit-slot{min-height:8px;display:flex;justify-content:center;}
+  .limit-msg{font-size:12.5px;color:#0d1322;font-weight:700;background:var(--warn);border-radius:8px;padding:3px 9px;box-shadow:0 0 16px rgba(255,210,122,.4);}
+  .reset-link{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;padding:2px 6px;}
+  .reset-link:hover{color:#cdd9ee;}
+
+  /* ===== דאשבורד ===== */
+  .field{padding:11px 0;border-bottom:1px dashed var(--border);}
+  .field:last-of-type{border-bottom:none;}
+  .field .label{font-size:12.5px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:7px;}
+  .field .value{font-size:18px;font-weight:800;color:#eef4ff;}
+  .field .value.placeholder{color:#5e6f8c;font-weight:600;}
+  .info-btn{width:19px;height:19px;border-radius:50%;border:1px solid var(--electron);color:var(--electron);
+    background:rgba(90,168,255,.08);font-size:12px;font-weight:bold;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;line-height:1;}
+  .info-box{margin-top:9px;font-size:13px;color:#cdd9ee;background:rgba(90,168,255,.1);border:1px solid rgba(90,168,255,.3);border-radius:10px;padding:9px 11px;}
+  .empty-hint{margin-top:14px;font-size:14px;font-weight:700;color:#0d1322;text-align:center;background:var(--warn);border-radius:12px;padding:11px 12px;box-shadow:0 0 22px rgba(255,210,122,.3);}
+
+  /* ===== סיום ===== */
+  .finish-bar{max-width:1220px;margin:22px auto 0;text-align:center;}
+  .finish-btn{font-size:20px;font-weight:800;padding:17px 38px;border-radius:16px;border:1px solid rgba(255,255,255,.08);cursor:pointer;
+    background:rgba(40,52,80,.6);color:#8595ad;transition:.25s;}
+  .finish-btn.ready{background:linear-gradient(180deg,#2ee6a6,#16b98a);color:#04231a;border-color:rgba(46,230,166,.6);
+    box-shadow:0 10px 30px rgba(46,230,166,.35);animation:glow 1.7s ease-in-out infinite alternate;}
+  .finish-btn.ready:hover{filter:brightness(1.06);}
+  .finish-btn.ready:active{transform:scale(.97);}
+  @keyframes glow{from{box-shadow:0 10px 26px rgba(46,230,166,.25);}to{box-shadow:0 12px 40px rgba(46,230,166,.6);}}
+  .finish-hint{margin-top:11px;font-size:14px;color:var(--warn);min-height:20px;}
+  .done-note{max-width:1220px;margin:22px auto 0;text-align:center;padding:24px;border-radius:18px;
+    background:linear-gradient(180deg,rgba(20,52,46,.6),rgba(14,30,28,.6));border:1px solid rgba(46,230,166,.45);
+    font-size:20px;font-weight:800;color:#9af2d4;box-shadow:0 14px 40px rgba(46,230,166,.18);backdrop-filter:blur(8px);}
+
+  /* אנימציות הופעה */
+  .pop{animation:pop .4s ease;transform-box:fill-box;transform-origin:center;}
+  @keyframes pop{0%{transform:scale(.1);opacity:0;}70%{transform:scale(1.15);}100%{transform:scale(1);opacity:1;}}
+  .efade{animation:efade .4s ease;}
+  @keyframes efade{from{opacity:0;}to{opacity:1;}}
+</style>
+</head>
+<body>
+
+  <header class="topbar">
+    <h1>המעבדה של מנדלייב</h1>
+    <div class="sub">האטום – מודל בוהר</div>
+  </header>
+
+  <div class="layout">
+
+    <!-- (א) משימות החקר – בראש -->
+    <section class="panel" aria-label="משימות החקר">
+      <h2><span class="dot"></span>משימות החקר שלי</h2>
+      <div class="info-box" style="margin-top:0;margin-bottom:14px;">המודל שלפניכם נקרא מודל בוהר: ייצוג מדעי שבו האלקטרונים נעים סביב הגרעין ברמות אנרגיה (קליפות).</div>
+      <div class="tasks-row" id="tasks"></div>
+    </section>
+
+    <!-- (ב+ג) אטום לצד לוח הנתונים -->
+    <div class="work-grid">
+      <section class="panel" aria-label="המעבדה">
+        <div class="lab-wrap">
+          <div class="stage">
+            <svg id="atom" viewBox="0 0 400 400" width="400" height="400" role="img" aria-label="אטום סכמטי"></svg>
+          </div>
+          <div class="status-pill" id="statusPill">סטטוס נוכחי: P=0, N=0, e⁻=0</div>
+        </div>
+      </section>
+
+      <section class="panel" aria-label="לוח נתונים">
+        <h2><span class="dot"></span>לוח הנתונים</h2>
+        <div class="field"><div class="label">שם היסוד וסמלו</div><div class="value placeholder" id="fElement">—</div></div>
+        <div class="field"><div class="label">מספר אטומי</div><div class="value placeholder" id="fAtomic">—</div></div>
+        <div class="field">
+          <div class="label">מספר מסה <button class="info-btn" id="massInfoBtn" aria-label="מידע על מספר מסה">i</button></div>
+          <div class="value placeholder" id="fMass">—</div>
+          <div class="info-box" id="massInfoBox" style="display:none">מספר המסה הוא ספירת חלקיקי הגרעין: מספר הפרוטונים ועוד מספר הנייטרונים. הפרוטון והנייטרון דומים במסתם, וכל אחד מהם נספר כיחידה אחת. האלקטרונים קלים מהם פי אלפים ולכן אינם נספרים במספר המסה.</div>
+        </div>
+        <div class="field"><div class="label">מטען חשמלי</div><div class="value placeholder" id="fCharge">—</div></div>
+        <div class="field">
+          <div class="label">זיהוי איזוטופ <button class="info-btn" id="isoInfoBtn" aria-label="מידע על איזוטופים">i</button></div>
+          <div class="value placeholder" id="fIsotope">—</div>
+          <div class="info-box" id="isoInfoBox" style="display:none">איזוטופים הם אטומים של אותו יסוד (אותו מספר פרוטונים) הנבדלים במספר הנייטרונים שבגרעין. לכן לאיזוטופים של אותו יסוד יש מספרי מסה שונים.</div>
+        </div>
+        <div class="empty-hint" id="emptyHint" style="display:none">הוסיפו פרוטון לגרעין כדי ליצור אטום</div>
+      </section>
+    </div>
+
+    <!-- פקדי החלקיקים – מתחת, רוחב מלא -->
+    <section class="panel" aria-label="פקדי החלקיקים">
+      <div class="controls">
+        <div class="ctl">
+          <div class="orb p">+</div>
+          <div class="name">פרוטון</div>
+          <div class="stepper">
+            <button class="btn-pm" id="pMinus" aria-label="הסר פרוטון">−</button>
+            <div class="num" id="cP">0</div>
+            <button class="btn-pm" id="pPlus" aria-label="הוסף פרוטון">+</button>
+          </div>
+          <div class="limit-slot" id="pLimit"></div>
+        </div>
+
+        <div class="ctl">
+          <div class="orb n">N</div>
+          <div class="name">נייטרון</div>
+          <div class="stepper">
+            <button class="btn-pm" id="nMinus" aria-label="הסר נייטרון">−</button>
+            <div class="num" id="cN">0</div>
+            <button class="btn-pm" id="nPlus" aria-label="הוסף נייטרון">+</button>
+          </div>
+          <div class="limit-slot" id="nLimit"></div>
+        </div>
+
+        <div class="ctl">
+          <div class="orb e">−</div>
+          <div class="name">אלקטרון</div>
+          <div class="stepper">
+            <button class="btn-pm" id="eMinus" aria-label="הסר אלקטרון">−</button>
+            <div class="num" id="cE">0</div>
+            <button class="btn-pm" id="ePlus" aria-label="הוסף אלקטרון">+</button>
+          </div>
+          <div class="limit-slot" id="eLimit"></div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:12px"><button class="reset-link" id="resetBtn">איפוס לוח</button></div>
+    </section>
+
+  </div>
+
+  <div class="finish-bar">
+    <button class="finish-btn" id="finishBtn">חקרתי במעבדה, ממשיכים לשלב הבא!</button>
+    <div class="finish-hint" id="finishHint"></div>
+  </div>
+
+<script>
+/* =========================================================================
+   המעבדה של מנדלייב – האטום   |   רכיב מעבדת חקר (קובץ יחיד, ללא תלות חיצונית)
+   המצב כולו נשמר בזיכרון בלבד (אין localStorage / sessionStorage).
+   ========================================================================= */
+const state = {
+  P:0, N:0, E:0,
+  addedP:false, removedP:false, addedN:false, removedN:false, addedE:false, removedE:false,
+  lastChanged:null, lastAction:null, finished:false
+};
+const MAX={P:8,N:10,E:10};
+const ELEMENTS={1:"מימן (H)",2:"הליום (He)",3:"ליתיום (Li)",4:"בריליום (Be)",5:"בור/בורון (B)",6:"פחמן (C)",7:"חנקן (N)",8:"חמצן (O)"};
+const ISO_NAME={1:"מימן",2:"הליום",3:"ליתיום",4:"בריליום",5:"בור/בורון",6:"פחמן",7:"חנקן",8:"חמצן"};
+
+/* נוסחי המשימות – מילה במילה לפי המפרט (מקף רגיל "-") */
+const TASKS=[
+  {title:"משימת חקר 1 - פרוטונים",
+   text:"הוסיפו פרוטונים לגרעין, אחד אחרי השני, והתבוננו בלוח הנתונים: מה משתנה בכל הוספה? כעת הסירו פרוטונים בזה אחר זה ובדקו: האם השינויים הפוכים? שימו לב במיוחד לשדה 'שם היסוד'."},
+  {title:"משימת חקר 2 - נייטרונים",
+   text:"בחרו יסוד (למשל ליתיום - 3 פרוטונים) והשאירו את מספר הפרוטונים קבוע. כעת הוסיפו והסירו נייטרונים בלבד. עקבו אחר השדות 'מספר מסה' ו'זיהוי איזוטופ': אילו שדות משתנים ואילו נשארים קבועים? שימו לב במיוחד: האם שם היסוד השתנה?"},
+  {title:"משימת חקר 3 - אלקטרונים",
+   text:"השאירו את הגרעין ללא שינוי, והוסיפו והסירו אלקטרונים בלבד. עקבו אחר השדות 'מטען חשמלי' ו'שם היסוד': מה משתנה ומה אינו משתנה? כיצד הופכים אטום נייטרלי ליון שלילי? וכיצד ליון חיובי?"}
+];
+
+function taskProgress(i){
+  // מחזיר אם התלמיד נגע (הוסיף או הסיר) בסוג החלקיק של המשימה
+  if(i===0) return {touched:(state.addedP||state.removedP), particle:"פרוטון"};
+  if(i===1) return {touched:(state.addedN||state.removedN), particle:"נייטרון"};
+  if(i===2) return {touched:(state.addedE||state.removedE), particle:"אלקטרון"};
+  return {touched:false, particle:""};
+}
+function taskDone(i){
+  if(i===0) return state.addedP||state.removedP;
+  if(i===1) return state.addedN||state.removedN;
+  if(i===2) return state.addedE||state.removedE;
+  return false;
+}
+function tasksRemaining(){return (taskDone(0)?0:1)+(taskDone(1)?0:1)+(taskDone(2)?0:1);}
+function allTasksDone(){return taskDone(0)&&taskDone(1)&&taskDone(2);}
+
+/* ---- פעולות חלקיקים ---- */
+function add(type){
+  if(state[type]>=MAX[type]) return;
+  state[type]++;
+  if(type==="P") state.addedP=true;
+  if(type==="N") state.addedN=true;
+  if(type==="E") state.addedE=true;
+  state.lastChanged=type; state.lastAction="add"; render();
+}
+function remove(type){
+  if(state[type]<=0) return;
+  state[type]--;
+  if(type==="P") state.removedP=true;
+  if(type==="N") state.removedN=true;
+  if(type==="E") state.removedE=true;
+  state.lastChanged=type; state.lastAction="remove"; render();
+}
+function resetBoard(){ state.P=0; state.N=0; state.E=0; state.lastChanged=null; state.lastAction=null; render(); }
+
+/* =========================================================================
+   ציור האטום (SVG זוהר)
+   ========================================================================= */
+const SVG_NS="http://www.w3.org/2000/svg";
+const CX=200, CY=200;
+const NUC_R=48, SHELL_IN=92, SHELL_OUT=150;
+
+function el(tag,attrs,inner){
+  const n=document.createElementNS(SVG_NS,tag);
+  for(const k in attrs) n.setAttribute(k,attrs[k]);
+  if(inner!=null) n.textContent=inner;
+  return n;
+}
+function buildDefs(){
+  const defs=el("defs",{});
+  defs.innerHTML=`
+    <radialGradient id="gP" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ff9aa3"/><stop offset="50%" stop-color="#ff5d6c"/><stop offset="100%" stop-color="#c22f43"/>
+    </radialGradient>
+    <radialGradient id="gN" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ffffff"/><stop offset="55%" stop-color="#d2dbe8"/><stop offset="100%" stop-color="#94a1b4"/>
+    </radialGradient>
+    <radialGradient id="gE" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#cfe6ff"/><stop offset="50%" stop-color="#5aa8ff"/><stop offset="100%" stop-color="#2766cf"/>
+    </radialGradient>
+    <radialGradient id="gNuc" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(255,196,120,.40)"/><stop offset="70%" stop-color="rgba(255,170,90,.12)"/><stop offset="100%" stop-color="rgba(255,170,90,0)"/>
+    </radialGradient>
+    <radialGradient id="gHalo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(90,168,255,.10)"/><stop offset="100%" stop-color="rgba(90,168,255,0)"/>
+    </radialGradient>
+    <filter id="glow" x="-70%" y="-70%" width="240%" height="240%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>`;
+  return defs;
+}
+
+// פיזור צפוף ומסודר של חלקיקי הגרעין (תבנית "חמנייה")
+function nucleusPositions(count){
+  const pts=[]; const c=10;
+  for(let i=0;i<count;i++){
+    const r=(count===1)?0:c*Math.sqrt(i);
+    const a=i*2.399963;
+    pts.push([CX+r*Math.cos(a), CY+r*Math.sin(a)]);
+  }
+  return pts;
+}
+function makeShellGroup(radius,count,dur,dir,fadeIdx){
+  const g=el("g",{});
+  g.appendChild(el("animateTransform",{
+    attributeName:"transform",attributeType:"XML",type:"rotate",
+    from:"0 "+CX+" "+CY, to:(dir*360)+" "+CX+" "+CY, dur:dur+"s", repeatCount:"indefinite"
+  }));
+  for(let i=0;i<count;i++){
+    const a=-Math.PI/2 + i*(2*Math.PI/count);
+    const x=CX+radius*Math.cos(a), y=CY+radius*Math.sin(a);
+    const wrap=el("g",{class:(i===fadeIdx)?"efade":""});
+    wrap.appendChild(el("circle",{cx:x,cy:y,r:9,fill:"url(#gE)",filter:"url(#glow)"}));
+    wrap.appendChild(el("text",{x:x,y:y+4,"text-anchor":"middle","font-size":"13",fill:"#fff","font-weight":"bold"},"−"));
+    g.appendChild(wrap);
+  }
+  return g;
+}
+
+function drawAtom(){
+  const svg=document.getElementById("atom");
+  svg.innerHTML="";
+  svg.appendChild(buildDefs());
+
+  // הילה רכה
+  svg.appendChild(el("circle",{cx:CX,cy:CY,r:185,fill:"url(#gHalo)"}));
+
+  // טבעת חיצונית זוהרת (סטטית)
+  svg.appendChild(el("circle",{cx:CX,cy:CY,r:178,fill:"none",stroke:"rgba(46,230,166,.45)","stroke-width":"1.6",filter:"url(#glow)"}));
+
+  // רמות אנרגיה (שתי טבעות מקווקוות) – פנימית וחיצונית
+  svg.appendChild(el("circle",{cx:CX,cy:CY,r:SHELL_OUT,fill:"none",stroke:"rgba(150,195,255,.55)","stroke-width":"1.5","stroke-dasharray":"5 7",filter:"url(#glow)"}));
+  svg.appendChild(el("circle",{cx:CX,cy:CY,r:SHELL_IN,fill:"none",stroke:"rgba(150,195,255,.55)","stroke-width":"1.5","stroke-dasharray":"5 7",filter:"url(#glow)"}));
+
+  // אלקטרונים: עד 2 בקליפה הפנימית, השאר בחיצונית (עד 8)
+  const inner=Math.min(state.E,2), outer=Math.max(0,state.E-2);
+  let fadeIn=-1, fadeOut=-1;
+  if(state.lastChanged==="E" && state.lastAction==="add"){
+    if(state.E<=2) fadeIn=state.E-1; else fadeOut=outer-1;
+  }
+  if(inner>0) svg.appendChild(makeShellGroup(SHELL_IN, inner, 26, 1, fadeIn));
+  if(outer>0) svg.appendChild(makeShellGroup(SHELL_OUT, outer, 42, -1, fadeOut));
+
+  // הילת הגרעין + מסגרת
+  svg.appendChild(el("circle",{cx:CX,cy:CY,r:NUC_R+10,fill:"url(#gNuc)"}));
+  svg.appendChild(el("circle",{cx:CX,cy:CY,r:NUC_R,fill:"rgba(255,176,96,.05)",stroke:"rgba(255,192,106,.8)","stroke-width":"1.6","stroke-dasharray":"4 5"}));
+
+  // חלקיקי הגרעין: פרוטונים ואז נייטרונים
+  const total=state.P+state.N;
+  const nPos=nucleusPositions(total);
+  for(let i=0;i<total;i++){
+    const isProton=i<state.P;
+    const p=nPos[i];
+    const isLast=(state.lastAction==="add") && (
+      (isProton && state.lastChanged==="P" && i===state.P-1) ||
+      (!isProton && state.lastChanged==="N" && i===total-1)
+    );
+    const g=el("g",{class:isLast?"pop":""});
+    g.appendChild(el("circle",{cx:p[0],cy:p[1],r:10,fill:isProton?"url(#gP)":"url(#gN)",filter:"url(#glow)"}));
+    if(isProton) g.appendChild(el("text",{x:p[0],y:p[1]+5,"text-anchor":"middle","font-size":"15",fill:"#fff","font-weight":"bold"},"+"));
+    svg.appendChild(g);
+  }
+}
+
+/* =========================================================================
+   דאשבורד
+   ========================================================================= */
+function setVal(id,text,isPlaceholder){
+  const node=document.getElementById(id);
+  node.textContent=text;
+  node.classList.toggle("placeholder", !!isPlaceholder);
+}
+function updateDashboard(){
+  const {P,N,E}=state;
+  const emptyHint=document.getElementById("emptyHint");
+  if(P===0){
+    setVal("fElement","אין יסוד - הגרעין ריק מפרוטונים", true);
+    setVal("fAtomic","—", true);
+    setVal("fMass","—", true);
+    setVal("fCharge","—", true);
+    setVal("fIsotope","—", true);
+    emptyHint.style.display="block";
+    return;
+  }
+  emptyHint.style.display="none";
+  setVal("fElement", ELEMENTS[P], false);
+  setVal("fAtomic", String(P), false);
+  setVal("fMass", String(P+N), false);
+  let charge;
+  if(E===P) charge="אטום נייטרלי";
+  else if(E>P) charge="יון שלילי (אניון), מטען "+(E-P)+"-";
+  else charge="יון חיובי (קטיון), מטען "+(P-E)+"+";
+  setVal("fCharge", charge, false);
+  setVal("fIsotope", ISO_NAME[P]+", מספר מסה "+(P+N), false);
+}
+
+/* ---- משימות ---- */
+function buildTasks(){
+  const wrap=document.getElementById("tasks"); wrap.innerHTML="";
+  TASKS.forEach((t,i)=>{
+    const div=document.createElement("div");
+    div.className="task"; div.id="task"+i;
+    div.innerHTML='<div class="mark" id="mark'+i+'"></div><div class="body"><div class="t-title">'+t.title+'</div><div class="t-text">'+t.text+'</div><div class="t-prog" id="prog'+i+'"></div></div>';
+    wrap.appendChild(div);
+  });
+}
+function updateTasks(){
+  for(let i=0;i<3;i++){
+    const done=taskDone(i);
+    const p=taskProgress(i);
+    document.getElementById("task"+i).classList.toggle("done",done);
+    document.getElementById("mark"+i).textContent=done?"✓":"";
+    const mark = done ? "✓" : "○";
+    const cls = done ? "pdone" : "ptodo";
+    document.getElementById("prog"+i).innerHTML =
+      '<span class="'+cls+'">'+mark+' חקרו את ה'+p.particle+' (הוסיפו או הסירו)</span>';
+  }
+}
+
+/* ---- פקדים ---- */
+function setLimit(id,atMax){
+  document.getElementById(id).innerHTML = atMax ? '<span class="limit-msg">הגעתם לגבול המעבדה</span>' : "";
+}
+function updateControls(){
+  document.getElementById("cP").textContent=state.P;
+  document.getElementById("cN").textContent=state.N;
+  document.getElementById("cE").textContent=state.E;
+  document.getElementById("pPlus").disabled=state.P>=MAX.P;
+  document.getElementById("pMinus").disabled=state.P<=0;
+  document.getElementById("nPlus").disabled=state.N>=MAX.N;
+  document.getElementById("nMinus").disabled=state.N<=0;
+  document.getElementById("ePlus").disabled=state.E>=MAX.E;
+  document.getElementById("eMinus").disabled=state.E<=0;
+  setLimit("pLimit",state.P>=MAX.P);
+  setLimit("nLimit",state.N>=MAX.N);
+  setLimit("eLimit",state.E>=MAX.E);
+  document.getElementById("statusPill").textContent="סטטוס נוכחי: P="+state.P+", N="+state.N+", e⁻="+state.E;
+}
+
+/* ---- כפתור הסיום ---- */
+function updateFinish(){
+  const ready=allTasksDone();
+  document.getElementById("finishBtn").classList.toggle("ready", ready);
+  const hint=document.getElementById("finishHint");
+  if(ready){
+    hint.textContent="כל המשימות הושלמו - אפשר להמשיך!";
+    hint.style.color="#2ee6a6";
+  } else {
+    const n=tasksRemaining();
+    hint.textContent="הכפתור ייפתח לאחר השלמת שלוש משימות החקר. נותרו עוד "+n+" מתוך 3.";
+    hint.style.color="";
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   נקודת החיבור לרכיב הבא בלומדה (סעיף 4.3 במפרט).
+   כשהתלמיד לוחץ על כפתור הסיום, המעבדה "מודיעה" החוצה שהיא הושלמה,
+   והלומדה שתעטוף את הרכיב יכולה להאזין ולעבור לרכיב שאלות החקר:
+     1) קריאה ל-  window.onLabCompleted(detail)  – אם הוגדרה פונקציה כזו.
+     2) שליחת אירוע  'labCompleted'  על window – האזנה עם addEventListener.
+   במצב עצמאי (ללא לומדה עוטפת) פשוט תוצג הודעת אישור קצרה.
+   --------------------------------------------------------------------------- */
+function notifyLabCompleted(){
+  const detail={protons:state.P,neutrons:state.N,electrons:state.E};
+  try{ if(typeof window.onLabCompleted==="function") window.onLabCompleted(detail); }catch(e){}
+  window.dispatchEvent(new CustomEvent("labCompleted",{detail}));
+}
+function onFinishClick(){
+  if(!allTasksDone()){
+    document.getElementById("finishHint").textContent="השלימו את שלוש משימות החקר כדי להמשיך";
+    return;
+  }
+  if(state.finished) return;
+  state.finished=true;
+  notifyLabCompleted();
+  const bar=document.querySelector(".finish-bar");
+  const note=document.createElement("div");
+  note.className="done-note";
+  note.textContent="חקרתם במעבדה של מנדלייב – ממשיכים לשלב הבא.";
+  bar.replaceWith(note);
+}
+function onFinishHover(){ /* ההנחיה מוצגת תמיד דרך updateFinish, אין צורך לשנות בריחוף */ }
+function onFinishLeave(){ /* ההנחיה מוצגת תמיד דרך updateFinish, אין צורך לשנות ביציאה */ }
+
+/* ---- render ראשי ---- */
+function render(){
+  drawAtom(); updateDashboard(); updateControls(); updateTasks(); updateFinish();
+  state.lastChanged=null; state.lastAction=null;
+}
+
+/* ---- אתחול ---- */
+function init(){
+  buildTasks();
+  document.getElementById("pPlus").addEventListener("click",()=>add("P"));
+  document.getElementById("pMinus").addEventListener("click",()=>remove("P"));
+  document.getElementById("nPlus").addEventListener("click",()=>add("N"));
+  document.getElementById("nMinus").addEventListener("click",()=>remove("N"));
+  document.getElementById("ePlus").addEventListener("click",()=>add("E"));
+  document.getElementById("eMinus").addEventListener("click",()=>remove("E"));
+  document.getElementById("resetBtn").addEventListener("click",resetBoard);
+  document.getElementById("isoInfoBtn").addEventListener("click",()=>{
+    const box=document.getElementById("isoInfoBox");
+    box.style.display = box.style.display==="none" ? "block" : "none";
+  });
+  document.getElementById("massInfoBtn").addEventListener("click",()=>{
+    const box=document.getElementById("massInfoBox");
+    box.style.display = box.style.display==="none" ? "block" : "none";
+  });
+  const fbtn=document.getElementById("finishBtn");
+  fbtn.addEventListener("click",onFinishClick);
+  fbtn.addEventListener("mouseenter",onFinishHover);
+  fbtn.addEventListener("mouseleave",onFinishLeave);
+  render();
+}
+document.addEventListener("DOMContentLoaded",init);
+</script>
+</body>
+</html>
