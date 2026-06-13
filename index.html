@@ -74,6 +74,11 @@
   .task.done .mark{background:var(--accent-2);border-color:var(--accent);transform:scale(1.12);box-shadow:0 0 16px rgba(46,230,166,.6);}
   .task .t-title{font-weight:800;margin-bottom:3px;color:#e8f0fb;font-size:14px;}
   .task .t-text{font-size:13px;color:#aebbd2;}
+  .task .t-prog{margin-top:8px;font-size:12px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;
+    padding-top:7px;border-top:1px dashed rgba(130,165,225,.2);}
+  .task .t-prog .pdone{color:#2ee6a6;font-weight:700;}
+  .task .t-prog .ptodo{color:#ffd27a;}
+  .task .t-prog .psep{color:#5a6b86;}
 
   /* ===== אזור עבודה: אטום לצד לוח הנתונים ===== */
   .work-grid{display:grid;grid-template-columns:1fr 330px;gap:18px;align-items:start;}
@@ -253,8 +258,8 @@ const state = {
   lastChanged:null, lastAction:null, finished:false
 };
 const MAX={P:8,N:10,E:10};
-const ELEMENTS={1:"מימן (H)",2:"הליום (He)",3:"ליתיום (Li)",4:"בריליום (Be)",5:"בורון (B)",6:"פחמן (C)",7:"חנקן (N)",8:"חמצן (O)"};
-const ISO_NAME={1:"מימן",2:"הליום",3:"ליתיום",4:"בריליום",5:"בורון",6:"פחמן",7:"חנקן",8:"חמצן"};
+const ELEMENTS={1:"מימן (H)",2:"הליום (He)",3:"ליתיום (Li)",4:"בריליום (Be)",5:"בור/בורון (B)",6:"פחמן (C)",7:"חנקן (N)",8:"חמצן (O)"};
+const ISO_NAME={1:"מימן",2:"הליום",3:"ליתיום",4:"בריליום",5:"בור/בורון",6:"פחמן",7:"חנקן",8:"חמצן"};
 
 /* נוסחי המשימות – מילה במילה לפי המפרט (מקף רגיל "-") */
 const TASKS=[
@@ -266,12 +271,20 @@ const TASKS=[
    text:"השאירו את הגרעין ללא שינוי, והוסיפו והסירו אלקטרונים בלבד. עקבו אחר השדות 'מטען חשמלי' ו'שם היסוד': מה משתנה ומה אינו משתנה? כיצד הופכים אטום נייטרלי ליון שלילי? וכיצד ליון חיובי?"}
 ];
 
+function taskProgress(i){
+  // מחזיר אם התלמיד נגע (הוסיף או הסיר) בסוג החלקיק של המשימה
+  if(i===0) return {touched:(state.addedP||state.removedP), particle:"פרוטון"};
+  if(i===1) return {touched:(state.addedN||state.removedN), particle:"נייטרון"};
+  if(i===2) return {touched:(state.addedE||state.removedE), particle:"אלקטרון"};
+  return {touched:false, particle:""};
+}
 function taskDone(i){
-  if(i===0) return state.addedP&&state.removedP;
-  if(i===1) return state.addedN&&state.removedN;
-  if(i===2) return state.addedE&&state.removedE;
+  if(i===0) return state.addedP||state.removedP;
+  if(i===1) return state.addedN||state.removedN;
+  if(i===2) return state.addedE||state.removedE;
   return false;
 }
+function tasksRemaining(){return (taskDone(0)?0:1)+(taskDone(1)?0:1)+(taskDone(2)?0:1);}
 function allTasksDone(){return taskDone(0)&&taskDone(1)&&taskDone(2);}
 
 /* ---- פעולות חלקיקים ---- */
@@ -441,15 +454,20 @@ function buildTasks(){
   TASKS.forEach((t,i)=>{
     const div=document.createElement("div");
     div.className="task"; div.id="task"+i;
-    div.innerHTML='<div class="mark" id="mark'+i+'"></div><div class="body"><div class="t-title">'+t.title+'</div><div class="t-text">'+t.text+'</div></div>';
+    div.innerHTML='<div class="mark" id="mark'+i+'"></div><div class="body"><div class="t-title">'+t.title+'</div><div class="t-text">'+t.text+'</div><div class="t-prog" id="prog'+i+'"></div></div>';
     wrap.appendChild(div);
   });
 }
 function updateTasks(){
   for(let i=0;i<3;i++){
     const done=taskDone(i);
+    const p=taskProgress(i);
     document.getElementById("task"+i).classList.toggle("done",done);
     document.getElementById("mark"+i).textContent=done?"✓":"";
+    const mark = done ? "✓" : "○";
+    const cls = done ? "pdone" : "ptodo";
+    document.getElementById("prog"+i).innerHTML =
+      '<span class="'+cls+'">'+mark+' חקרו את ה'+p.particle+' (הוסיפו או הסירו)</span>';
   }
 }
 
@@ -474,7 +492,19 @@ function updateControls(){
 }
 
 /* ---- כפתור הסיום ---- */
-function updateFinish(){ document.getElementById("finishBtn").classList.toggle("ready", allTasksDone()); }
+function updateFinish(){
+  const ready=allTasksDone();
+  document.getElementById("finishBtn").classList.toggle("ready", ready);
+  const hint=document.getElementById("finishHint");
+  if(ready){
+    hint.textContent="כל המשימות הושלמו - אפשר להמשיך!";
+    hint.style.color="#2ee6a6";
+  } else {
+    const n=tasksRemaining();
+    hint.textContent="הכפתור ייפתח לאחר השלמת שלוש משימות החקר. נותרו עוד "+n+" מתוך 3.";
+    hint.style.color="";
+  }
+}
 
 /* ---------------------------------------------------------------------------
    נקודת החיבור לרכיב הבא בלומדה (סעיף 4.3 במפרט).
@@ -503,8 +533,8 @@ function onFinishClick(){
   note.textContent="חקרתם במעבדה של מנדלייב – ממשיכים לשלב הבא.";
   bar.replaceWith(note);
 }
-function onFinishHover(){ if(!allTasksDone()) document.getElementById("finishHint").textContent="השלימו את שלוש משימות החקר כדי להמשיך"; }
-function onFinishLeave(){ if(!allTasksDone()) document.getElementById("finishHint").textContent=""; }
+function onFinishHover(){ /* ההנחיה מוצגת תמיד דרך updateFinish, אין צורך לשנות בריחוף */ }
+function onFinishLeave(){ /* ההנחיה מוצגת תמיד דרך updateFinish, אין צורך לשנות ביציאה */ }
 
 /* ---- render ראשי ---- */
 function render(){
